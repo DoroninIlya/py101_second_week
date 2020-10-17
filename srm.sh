@@ -6,14 +6,15 @@ if [ -z "$file_name" ]
 then
 	echo 'Укажите, пожалуйста, файл, который вы хотите удалить'
 	exit -1
-else
-	echo $file_name
 fi
 
-if [ -e ~/RECYCLE ]
+mv $file_name ~/RECYCLE/$file_name
+
+gzip ~/RECYCLE/$file_name
+
+packed_file_name="${file_name}.gz"
+
+if [ -e ~/RECYCLE/$packed_file_name ]
 then
-	echo 'Директория RECYCLE существует'
-else
-	echo 'Директория RECYCLE не существует - создаем ее'
-	mkdir ~/RECYCLE
+	echo 'Файл удален в корзину'
 fi

@@ -26,24 +26,29 @@ function get_difference {
 	expr $1 - $2
 }
 
-#в цикле проверяем, что папка не пустая
-while [[ $(ls ~/RECYCLE/ -A) ]]
-do
-	current_timestamp=$(get_current_timestamp)
-	
-	oldest_file_name=$(get_newest_file_name)
+if [ -e ~/RECYCLE ]
+then
+	#в цикле проверяем, что папка не пустая
+	while [[ $(ls ~/RECYCLE/ -A) ]]
+	do
+		current_timestamp=$(get_current_timestamp)
+		
+		oldest_file_name=$(get_newest_file_name)
 
-	file_created_date=$(get_file_created_time $oldest_file_name)
+		file_created_date=$(get_file_created_time $oldest_file_name)
 
-	file_created_timestamp=$(convert_date_to_timestamp ${file_created_date})
+		file_created_timestamp=$(convert_date_to_timestamp ${file_created_date})
 
-	if (( $(get_difference $current_timestamp $file_created_timestamp) > $seven_days_in_seconds ))
-	then	
-		rm ~/RECYCLE/${oldest_file_name}
-	else
-		break
-	fi 
-done
+		if (( $(get_difference $current_timestamp $file_created_timestamp) > $seven_days_in_seconds ))
+		then	
+			rm ~/RECYCLE/${oldest_file_name}
+		else
+			break
+		fi 
+	done
+else
+	mkdir ~/RECYCLE
+fi
 
 #блок 2 - проверяем, что для команды введен аргумент с именем файлы
 file_name="$1"

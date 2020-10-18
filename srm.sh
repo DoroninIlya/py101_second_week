@@ -1,45 +1,51 @@
 #!/bin/bash
 
-seven_days_in_seconds=604800
+IFS='
+'
+
+#блок 1 - удаляем из корзины файлы, которые были перемещены туда более чем 7 дней назад
+seven_days_in_seconds=6048
 
 function get_current_timestamp {
 	date +"%s"
 }
 
-current_timestamp=$(get_current_timestamp)
-
 function get_newest_file_name {
 	ls ~/RECYCLE/ -tr | head -1
 }
 
-newest_file_name=$(get_newest_file_name)
-echo $newest_file_name
-
 function get_file_created_time {
-	stat -c %y ~/RECYCLE/${newest_file_name}
+	stat -c %y ~/RECYCLE/$1
 }
-
-file_created_date=$(get_file_created_time)
 
 function convert_date_to_timestamp {
 	date -d $1 +"%s"
 }
 
-file_created_timestamp=$(convert_date_to_timestamp ${file_created_date})
-
 function get_difference {
 	expr $1 - $2
 }
 
-#todo: заменить условие на цикл
-if (( $(get_difference $current_timestamp $file_created_timestamp) >= $seven_days_in_seconds ))
-then	
-	echo 'Удаляем файл из корзины, так как он был перемещен в корзину более недели назад'
-	rm ~/RECYCLE/${newest_file_name}
-else
-	echo 'В корзине не осталось устаревших файлов'
-fi
+#в цикле проверяем, что папка не пустая
+while [[ $(ls ~/RECYCLE/ -A) ]]
+do
+	current_timestamp=$(get_current_timestamp)
+	
+	oldest_file_name=$(get_newest_file_name)
 
+	file_created_date=$(get_file_created_time $oldest_file_name)
+
+	file_created_timestamp=$(convert_date_to_timestamp ${file_created_date})
+
+	if (( $(get_difference $current_timestamp $file_created_timestamp) > $seven_days_in_seconds ))
+	then	
+		rm ~/RECYCLE/${oldest_file_name}
+	else
+		break
+	fi 
+done
+
+#блок 2 - проверяем, что для команды введен аргумент с именем файлы
 file_name="$1"
 
 if [ -z "$file_name" ]
@@ -48,13 +54,9 @@ then
 	exit -1
 fi
 
+#блок 3 - перемещаем файл в корзину и упаковываем его в архив
 mv $file_name ~/RECYCLE/$file_name
 
 gzip ~/RECYCLE/$file_name
 
-packed_file_name="${file_name}.gz"
-
-if [ -e ~/RECYCLE/$packed_file_name ]
-then
-	echo 'Файл удален в корзину'
-fi
+echo 'Файл удален'
